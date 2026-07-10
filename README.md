@@ -160,14 +160,18 @@ Outputs land under `./work/results_650M/<task>.json`.
 
 `examples/setup_benchmark.sh` env vars:
 
-* `SPLIT=test | valid | train | all`: which PDB shard(s) to fetch and
-  untar. Default `test` (~130 MB compressed for probing eval). Use `all`
-  for the full training set.
-* `NEED_HOMODIMER=0 | 1`: also fetch the homodimer PDB shard(s).
-  Default `0` (monomer only). Set `1` when you plan to run folding or
-  co-folding training.
+* `SPLIT=test | valid | train | all`: which monomer PDB shard(s) to fetch
+  and untar. Default `test` (~130 MB compressed for probing eval). Use
+  `all` for the full folding / co-folding training set.
 * `PDBS_DIR=./REPSP_PDB`: where to untar the PDBs.
 * `BENCHMARK=./benchmark`: where to place the splits + labels + Boltz tokens.
+
+Raw homodimer PDBs are **not** fetched by default: the shipped
+benchmarks (probing, folding, co-folding) all read the Boltz-tokenized
+dimer under `boltz_holo_{tokens,targets}` rather than raw dimer PDBs. If
+you need them for label recomputation or custom analysis, pull them
+directly with
+`hf download k-fold-structure/repsp-benchmark --repo-type dataset --include "REPSP_PDB/homodimer/*"`.
 
 `examples/run_benchmark.sh` env vars:
 

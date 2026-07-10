@@ -2,18 +2,34 @@
   <img src="_assets/logo.png" alt="triprorep logo" width="600">
 </p>
 
-# K-Fold Structure
+# TriProRep
 
 Structure-aware protein encoders pre-trained with an ELECTRA-style corrective
-MLM objective on 83.6M ATLAS + PDB structures, plus a per-residue
-representation benchmark covering apo-conditioned co-folding, REPA-supervised
-folding, and frozen probing.
+MLM objective on protein structures, plus a per-residue representation
+benchmark covering apo-conditioned co-folding, REPA-supervised folding, and
+frozen probing.
 
-The encoders read a structure as three per-residue token streams: amino-acid
-sequence (**seq**), backbone geometry (**bb**), full-atom geometry (**fa**).
-Output is a per-residue embedding `[L, D] fp16`. The benchmarks go
-**apo → holo**: take an unbound monomer ("apo") and predict properties of
-the bound homodimer ("holo", two identical chains).
+Paper: [Atom-level Protein Representation Learning Improves Protein Structure Prediction](https://arxiv.org/abs/2605.22133) (arXiv:2605.22133).
+
+## Abstract
+
+> Recent advances in generative modeling show that pretrained representations
+> can improve generation as conditioning features or alignment targets.
+> Motivated by this, we study protein representations for predicting
+> structures beyond conventional function annotation. We propose TriProRep,
+> a structure-aware pretraining method that jointly models three aligned
+> residue-level views: amino-acid identity, backbone geometry, and local
+> full-atom geometry, discretely encoded via VQ-VAE tokenizers. By
+> pretraining to recover original tokens from generator-corrupted views,
+> TriProRep learns to distinguish plausible but incorrect cross-view
+> augmentations from the original protein. We further introduce RepSP,
+> a benchmark for evaluating protein representations in structure-predictive
+> settings. RepSP tests three uses of representations: homodimer co-folding
+> from apo-chain representations, residue-level prediction of
+> homodimer-derived interaction properties, and representation-aligned
+> monomer structure prediction. Across these tasks, TriProRep improves over
+> sequence-only and prior structure-aware representation models, while
+> maintaining competitive performance on conventional benchmarks.
 
 ## Quickstart
 
@@ -541,11 +557,14 @@ A working reference is `code/repsp/probing/homomer/__lib/extract_probing_feature
 ## Citation
 
 ```bibtex
-@misc{kfoldstructure,
-  title  = {K-Fold Structure: Structure-Aware Protein Encoders and a Per-Residue Representation Benchmark},
-  author = {<authors>},
+@misc{triprorep,
+  title  = {Atom-level Protein Representation Learning Improves Protein Structure Prediction},
+  author = {Kim, Taewon and Jang, Hyosoon and Seo, Hyunjin and Seo, Seonghwan and Kim, Hyeongwoo and Zhung, Wonho and Shin, Mingyeong and Kim, Wooyoun and Ahn, Sungsoo},
   year   = {2026},
-  url    = {https://huggingface.co/k-fold-structure}
+  eprint = {2605.22133},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG},
+  url    = {https://arxiv.org/abs/2605.22133}
 }
 ```
 

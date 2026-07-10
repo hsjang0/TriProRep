@@ -1,3 +1,10 @@
+# Internal-only docs (not for public repo).
+UPLOAD_MANIFEST.md
+
+# Bundled split files, canonical copies live on HuggingFace under
+# k-fold-structure/repsp-benchmark/splits/.
+data/splits/
+
 # Large binaries — get these from HuggingFace instead of committing.
 # The tokenizers are pulled lazily by `inference.embed_pdb` / `tokenize_pdb`
 # from the model repo. Probing labels ship in the `k-fold-structure/repsp-benchmark`

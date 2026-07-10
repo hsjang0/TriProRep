@@ -19,8 +19,8 @@ the bound homodimer ("holo", two identical chains).
 
 ```bash
 pip install torch huggingface_hub omegaconf numpy lmdb biotite
-git clone https://github.com/<github-org>/k-fold-structure-release.git
-cd k-fold-structure-release
+git clone https://github.com/hsjang0/TriProRep.git
+cd TriProRep
 ```
 
 ```python

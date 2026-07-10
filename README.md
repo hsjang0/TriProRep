@@ -109,15 +109,15 @@ itself is not loaded. CPU works fine and the GPU footprint stays small.
 
 ### 3. Score your encoder on the benchmark
 
-Plug your encoder into our probing benchmark in three steps. We do **not**
-redistribute the PDBs (AFDB license), so you either build them locally
-from the Boltz-tokenized AFDB-Multimer structures with `scripts/npz_to_pdb.py`
-or fetch the NVIDIA chunk tars from
-[EBI](https://ftp.ebi.ac.uk/pub/databases/alphafold/collaborations/nvda/).
+Plug your encoder into our probing benchmark in three steps. All the
+assets you need (splits, probing labels, Boltz tokens, and the raw PDBs
+under `REPSP_PDB/`) live in the
+[`k-fold-structure/repsp-benchmark`](https://huggingface.co/datasets/k-fold-structure/repsp-benchmark)
+HF dataset. The raw PDBs are AFDB structures redistributed under CC BY 4.0
+(see [Datasets](#datasets)).
 
 ```bash
-# (a) Populate ./REPSP_PDB/{monomer,homodimer}/, then pull the small
-#     benchmark assets (splits, labels, Boltz tokens).
+# (a) Pull the benchmark assets + the PDB shards you need.
 bash examples/setup_benchmark.sh
 
 # (b) Build features.lmdb with your encoder.
@@ -198,7 +198,8 @@ cd ./pretrain.lmdb && cat data.mdb.part_* > data.mdb && rm data.mdb.part_*
 
 ### Raw PDBs (`REPSP_PDB/`)
 
-Raw PDBs are **not** redistributed here (AFDB license). Build them locally:
+Sharded tar.gz under `k-fold-structure/repsp-benchmark/REPSP_PDB/`.
+Untarring reproduces this layout:
 
 ```
 REPSP_PDB/
@@ -207,30 +208,34 @@ REPSP_PDB/
 ```
 
 The AFid in both filenames is the same homodimer identifier taken from
-`splits/{folding,probing}/{train,valid,test}.txt`. Two options to
-populate `REPSP_PDB/`:
+`splits/{folding,probing}/{train,valid,test}.txt`. Sizes:
 
-* If you have the AFDB-Multimer Boltz-format structures locally (from
-  our folding pipeline or a prior release), run:
+| Shard | Records | Compressed |
+|---|---:|---:|
+| `monomer/valid.tar.gz` | 400 | 18 MB |
+| `monomer/test.tar.gz`  | 1,000 | 45 MB |
+| `monomer/train_000.tar.gz` | 390,861 | 18 GB |
+| `homodimer/valid.tar.gz` | 400 | 34 MB |
+| `homodimer/test.tar.gz` | 1,000 | 85 MB |
+| `homodimer/train_000.tar.gz` | 390,861 | 34 GB |
 
-  ```bash
-  python scripts/npz_to_pdb.py \
-      --split ./benchmark/splits/folding/train.txt \
-      --apo_dir  /path/to/co-folding/full/apo_targets/structures \
-      --holo_dir /path/to/co-folding/full/holo_targets/structures \
-      --out_dir  ./REPSP_PDB \
-      --workers 32
-  ```
-
-* Otherwise fetch the NVIDIA/AFDB-Multimer chunk tars from
-  [`ftp.ebi.ac.uk/.../collaborations/nvda/`](https://ftp.ebi.ac.uk/pub/databases/alphafold/collaborations/nvda/).
-  The `homodimer_metadata.csv` there maps each AFid to a `chunk_NNNN.tar`;
-  download only the chunks you need and untar into `REPSP_PDB/homodimer/`.
-  Repeat for the corresponding monomer entries.
+For probing only, `monomer/test.tar.gz` alone is enough (about 130 MB).
+For folding / co-folding training, grab the train shards as well.
 
 Split identity is preserved as-committed: folding 390,627 / 400 / 1,000,
 probing 39,100 / 400 / 1,000. The splits are LMDB-cleaned (a small number
 of AFids that fail Boltz tokenization are already dropped).
+
+The PDBs come from the AFDB-Multimer homodimer collection (predicted with
+AlphaFold-Multimer / ColabFold; see
+[collaborations/nvda](https://ftp.ebi.ac.uk/pub/databases/alphafold/collaborations/nvda/)
+on the EBI FTP) and the corresponding apo monomers we generated with
+AlphaFold-2. Both are AlphaFold Protein Structure Database content and are
+redistributed here under the same [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+terms as the upstream AlphaFold DB, with attribution to DeepMind and
+EMBL-EBI (see [Acknowledgements](#acknowledgements)). If you prefer, you
+can also rebuild `REPSP_PDB/` from a local checkout of the Boltz-format
+structures our folding pipeline writes with `scripts/npz_to_pdb.py`.
 
 The `boltz_*` dirs use the SimpleFold on-disk format
 (`manifest.json` + `records/` + `tokens/` or `structures/`). The
@@ -553,6 +558,14 @@ A working reference is `code/repsp/probing/homomer/__lib/extract_probing_feature
   [SimpleFold](https://github.com/apple/ml-simplefold) (Apple, MIT) and
   [Boltz](https://github.com/jwohlwend/boltz) (Wohlwend et al., MIT). See
   `code/repsp/folding/docs/ATTRIBUTION.md` and `code/repsp/folding/LICENSE`.
+- **Structures under `REPSP_PDB/`**: the homodimer PDBs are AFDB-Multimer
+  predictions provided by NVIDIA to the
+  [AlphaFold Protein Structure Database](https://alphafold.ebi.ac.uk/)
+  (Jumper et al., 2021; Varadi et al., 2022, 2024); the apo monomers are
+  AlphaFold-2 single-chain predictions we generated. Both are redistributed
+  under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) with
+  attribution to DeepMind and EMBL-EBI, per the AFDB
+  [terms of use](https://alphafold.ebi.ac.uk/assets/Terms-of-Use.pdf).
 
 ## Citation
 

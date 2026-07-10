@@ -147,16 +147,29 @@ The schema (a) expects from your `my_extract.py` is in
 
 ### 4. Reproduce the benchmark
 
-Two commands. The first pulls benchmark assets and expects `./REPSP_PDB/`
-already populated (see [Datasets](#datasets) below). The second runs all
-four probing tasks with our encoder.
+Two commands. The first pulls all benchmark assets from HuggingFace
+(splits + probing labels + Boltz tokens + the monomer PDB shards). The
+second runs all four probing tasks with our encoder.
 
 ```bash
 bash examples/setup_benchmark.sh
 MODEL_SIZE=650M bash examples/run_benchmark.sh
 ```
 
-Outputs land under `./work/results_650M/<task>.json`. Knobs:
+Outputs land under `./work/results_650M/<task>.json`.
+
+`examples/setup_benchmark.sh` env vars:
+
+* `SPLIT=test | valid | train | all`: which PDB shard(s) to fetch and
+  untar. Default `test` (~130 MB compressed for probing eval). Use `all`
+  for the full training set.
+* `NEED_HOMODIMER=0 | 1`: also fetch the homodimer PDB shard(s).
+  Default `0` (monomer only). Set `1` when you plan to run folding or
+  co-folding training.
+* `PDBS_DIR=./REPSP_PDB`: where to untar the PDBs.
+* `BENCHMARK=./benchmark`: where to place the splits + labels + Boltz tokens.
+
+`examples/run_benchmark.sh` env vars:
 
 * `MODEL_SIZE=35M | 150M | 650M | 3B`: pick encoder size.
 * `PDBS_DIR=./REPSP_PDB/monomer`: point at your monomer PDB dir.

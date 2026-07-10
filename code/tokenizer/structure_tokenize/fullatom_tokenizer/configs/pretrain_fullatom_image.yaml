@@ -1,0 +1,67 @@
+defaults:
+    - _self_
+    - trainer: base
+    - lightning: pretrain
+    - data: pretrain_afdb_merge
+    - optimization: base
+    - autorestart: base
+
+model:
+    class_name: "VQVAEModel"
+    pretrained_ckpt_path: "" # where to load the pretrained pLM
+    ckpt_path: null
+    seq_tokenizer_path: "facebook/esm2_t33_650M_UR50D" # the path for sequence tokenizer
+    quantizer:
+        quantizer_type: EMAQuantizer
+        loss_weight:
+            commitment_loss_weight: 1.0
+            quantization_loss_weight: 1.0
+            reconstruction_loss_weight: 1.0
+            inverse_folding_loss_weight: 0.0  # default: disabled
+            chi_angle_loss_weight: 1.0
+        codebook_size: 512 # the number of discrete tokens
+        codebook_embed_size: 256
+        _need_init: true
+        freeze_codebook: false
+        use_linear_project: false
+        ema_decay: 0.99
+        epsilon: 1e-5
+        codebook_reset_threshold: 2
+        entropy_loss_weight: 0.1
+        entropy_temperature: 1.0
+    encoder:
+        name: AtomisticImageEncoder # AtomisticStructureTokenEncoder # VanillaESM3StructureTokenEncoder # AtomisticESM3FullStructureTokenEncoder
+        d_single: 256
+        d_pair: 128
+        n_heads: 8
+        n_layers_residue: 2
+        n_layers_atom: 6
+        d_out: 256
+        update_pair_repr_every_n: 2
+        use_esm_transformer: false
+        checkpointing: true
+        local_transformer_dropout: 0.1
+        use_canonical_frames: true
+    freeze_except_chi_head: false  # freeze all except chi_angle_proj for post-training
+    max_train_residues: 128  # randomly subsample residues during training (0 = disabled)
+    decoder:
+        d_model: 256
+        n_heads: 8
+        n_layers: 4
+
+hardware:
+  ngpus_per_node_: 8
+  nnodes_: 1
+
+batch_size: 16
+default_data_dir: null
+tokenizer: null
+max_epochs: 100
+experiment_name: test # used for tensorboard
+run_name: test_run
+validate_only: false
+test_only: false
+accumulate_grad_batches: 1
+
+save_dir_path: "local_transformer_dropout" # would be indicated during running
+tokenizer_device: "cuda" # or "cpu": where to put the tokenizer.tokenizer_encoder. 

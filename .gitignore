@@ -1,0 +1,47 @@
+# Large binaries — get these from HuggingFace instead of committing.
+# The tokenizers are pulled lazily by `inference.embed_pdb` / `tokenize_pdb`
+# from the model repo. Probing labels ship in the `k-fold-structure/repsp-benchmark`
+# HF dataset as `probing/labels.pkl`.
+code/tokenizer/backbone_tokenizer.pt
+code/tokenizer/fullatom_tokenizer.pt
+code/tokenizer/structure_tokenize/fullatom_tokenizer/fullatom_tokenizer.pt
+code/repsp/probing/homomer/data/homomer_target_set.pkl
+code/repsp/probing/homomer/data/homomer_target_set_plip.pkl
+
+# Reference fixtures for the tokenizer regression test (regenerated locally).
+code/tokenizer/structure_tokenize/fullatom_tokenizer/reference/*.npz
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Build artifacts + local runs
+build/
+dist/
+work/
+pdbs/
+REPSP_PDB/
+benchmark/
+tokens.lmdb/
+pretrain.lmdb/
+features*.lmdb/
+probing_features*/
+results*/
+_logs/
+*.log

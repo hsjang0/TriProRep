@@ -1,0 +1,64 @@
+# Exclude bin directory contents
+data/structure_tokenize/bin/
+
+# Exclude reference code
+k-fold-taewon/
+
+# favqvae is a separate git repo (github.com/holymollyhao/k-fold) — manage there.
+favqvae/
+
+# Python cache
+__pycache__/
+*/__pycache__/
+**/__pycache__/
+***/__pycache__/
+****/__pycache__/
+*****/__pycache__/
+favqvae/__pycache__/
+
+folding/
+
+*.pyc
+*.pyo
+*.pyd
+*.Python
+*.egg-info/
+*.idea/
+*.ipynb_checkpoints/
+*.vscode/
+*/esm/dev
+*/plots/
+
+# Wandb
+wandb/
+slack_bot/
+
+# Slurm logs
+slurm_logs/
+
+# Other common ignores
+*.log
+*.swp
+*.swo
+*~
+__pycache__/utils.cpython-310.pyc
+
+outputs/
+favqvae/outputs/
+.agent/
+
+# Large artifacts (>=50MB) — model checkpoints, tokenizer weights, sequence DBs.
+*.ckpt
+*.pt
+*.pth
+*.safetensors
+*.bin
+*.fasta
+*.fa
+*.fastq
+*.msgpack
+*.lmdb
+*.h5
+*.hdf5
+*.npz
+favqvae/pdb_cluster_all_seqs.fasta

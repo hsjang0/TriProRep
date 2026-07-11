@@ -2,6 +2,12 @@
   <img src="_assets/logo.png" alt="triprorep logo" width="600">
 </p>
 
+<p align="center">
+  <a href="https://arxiv.org/abs/2605.22133"><img src="https://img.shields.io/badge/arXiv-2605.22133-b31b1b.svg" alt="arXiv"></a>
+  <a href="https://holymollyhao.github.io/TriProRep/"><img src="https://img.shields.io/badge/project-page-blue" alt="Project page"></a>
+  <a href="https://huggingface.co/k-fold-structure"><img src="https://img.shields.io/badge/%F0%9F%A4%97-HuggingFace-yellow" alt="HuggingFace"></a>
+</p>
+
 # TriProRep
 
 Structure-aware protein encoders pre-trained with an ELECTRA-style corrective
@@ -9,7 +15,9 @@ MLM objective on protein structures, plus a per-residue representation
 benchmark covering apo-conditioned co-folding, REPA-supervised folding, and
 frozen probing.
 
-Paper: [Atom-level Protein Representation Learning Improves Protein Structure Prediction](https://arxiv.org/abs/2605.22133) (arXiv:2605.22133).
+- **Paper**: [Atom-level Protein Representation Learning Improves Protein Structure Prediction](https://arxiv.org/abs/2605.22133) (arXiv:2605.22133)
+- **Project page**: <https://holymollyhao.github.io/TriProRep/>
+- **Models + benchmark**: [`k-fold-structure`](https://huggingface.co/k-fold-structure) on HuggingFace
 
 ## Abstract
 

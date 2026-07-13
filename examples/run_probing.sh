@@ -12,6 +12,7 @@
 set -euo pipefail
 
 MODEL_SIZE=${MODEL_SIZE:-650M}
+BATCH_SIZE=${BATCH_SIZE:-8}
 BENCHMARK=./benchmark
 WORK=./work
 FEATS_LMDB="$WORK/features_${MODEL_SIZE}.lmdb"
@@ -32,6 +33,7 @@ if [[ ! -f "$FEATS_LMDB/data.mdb" ]]; then
     python "$HERE/_extract_features_from_tokens.py" \
         --tokens_lmdb "$BENCHMARK/probing/tokens.lmdb" \
         --model "$MODEL_SIZE" \
+        --batch_size "$BATCH_SIZE" \
         --output "$FEATS_LMDB"
 else
     echo "  reusing $FEATS_LMDB"

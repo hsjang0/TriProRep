@@ -134,6 +134,44 @@ def encode(encoder, seq_ids, bb_ids, fa_ids=None) -> np.ndarray:
     return emb[0].cpu().numpy().astype(np.float16)
 
 
+@torch.no_grad()
+def encode_batch(encoder, records) -> list[np.ndarray]:
+    """Batched chain-A forward, one padded batch → list of per-record ``[L_i, D]``
+    fp16 numpy features (unpadded).
+
+    ``records`` is a list of ``(seq_ids, bb_ids, fa_ids)`` triples. All three
+    arrays per record must have the same length ``L_i``; ``fa_ids`` may be
+    ``None`` for every record (must be uniformly None or uniformly non-None).
+
+    Padding uses ``_PAD_ID``; the attention mask is set to ``True`` only on
+    real positions so pad tokens do not leak into the representation.
+    """
+    if not records:
+        return []
+    have_fa = records[0][2] is not None
+    device = next(encoder.parameters()).device
+    B = len(records)
+    lengths = [len(r[0]) for r in records]
+    L_max = max(lengths)
+
+    seq = torch.full((L_max, B), _PAD_ID, dtype=torch.int64, device=device)
+    bb  = torch.full((L_max, B), _PAD_ID, dtype=torch.int64, device=device)
+    fa  = (torch.full((L_max, B), _PAD_ID, dtype=torch.int64, device=device)
+           if have_fa else None)
+    attn = torch.zeros((B, L_max), dtype=torch.bool, device=device)
+    for i, (s, b, f) in enumerate(records):
+        L = len(s)
+        seq[:L, i] = torch.from_numpy(np.asarray(s, dtype=np.int64) + _NUM_SPECIAL).to(device)
+        bb[:L, i]  = torch.from_numpy(np.asarray(b, dtype=np.int64) + _NUM_SPECIAL).to(device)
+        if have_fa:
+            fa[:L, i] = torch.from_numpy(np.asarray(f, dtype=np.int64) + _NUM_SPECIAL).to(device)
+        attn[i, :L] = True
+
+    emb = encoder(seq, bb, attn, fa, ret_embeddings=True)   # [B, L_max, D]
+    emb = emb.to(torch.float16).cpu().numpy()
+    return [emb[i, :L] for i, L in enumerate(lengths)]
+
+
 # ---------------------------------------------------------------------------
 # PDB → features (one-shot helper, downloads + caches tokenizers on first call)
 # ---------------------------------------------------------------------------

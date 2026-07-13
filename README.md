@@ -42,23 +42,30 @@ frozen probing.
 ## Quickstart
 
 ```bash
-pip install torch huggingface_hub omegaconf numpy lmdb biotite
+pip install torch huggingface_hub omegaconf numpy lmdb biotite einops
 git clone https://github.com/hsjang0/TriProRep.git
 cd TriProRep
+python examples/quickstart_demo.py
 ```
+
+The demo loads the 650M encoder from HuggingFace and embeds the bundled
+example PDB (`_assets/example_monomer.pdb`), printing an embedding shape
+of `(119, 1280)` in fp16. First run downloads the encoder + tokenizers
+(about 3 GB, cached under `HF_HOME`).
+
+Under the hood:
 
 ```python
 import sys; sys.path.insert(0, "code/triprorep")
 from inference import load_encoder, embed_pdb
 
 encoder  = load_encoder("650M", hf_repo="k-fold-structure/triprorep-650M")
-features = embed_pdb(encoder, "your_protein.pdb",
-                     hf_repo="k-fold-structure/triprorep-650M")
-print(features.shape)   # (L, D) fp16
+features = embed_pdb(encoder, "_assets/example_monomer.pdb")
+print(features.shape)   # (119, 1280) fp16
 ```
 
-If you already have `(seq, bb, fa)` token IDs, call `encode(encoder, seq, bb, fa)`
-directly. For CPU inference, pass `device="cpu"` to `load_encoder`.
+For CPU inference, pass `device="cpu"` to `load_encoder`. If you already
+have `(seq, bb, fa)` token IDs, call `encode(encoder, seq, bb, fa)` directly.
 
 ## What can you do with this release?
 
@@ -80,10 +87,10 @@ import sys; sys.path.insert(0, "code/triprorep")
 from inference import load_encoder, embed_pdb
 
 encoder  = load_encoder("650M", hf_repo="k-fold-structure/triprorep-650M")
-features = embed_pdb(encoder, "your_protein.pdb")     # (L, 1280) fp16
+features = embed_pdb(encoder, "path/to/your.pdb")     # (L, 1280) fp16
 ```
 
-Whole directory → one LMDB:
+Whole directory into one LMDB:
 
 ```bash
 python examples/extract_features_from_pdbs.py \
@@ -104,7 +111,7 @@ for your own classifier, a generation model, a custom probe.
 import sys; sys.path.insert(0, "code/triprorep")
 from inference import tokenize_pdb
 
-tok = tokenize_pdb("your_protein.pdb",
+tok = tokenize_pdb("path/to/your.pdb",
                    hf_repo="k-fold-structure/triprorep-650M")
 tok["seq"]   # (L,) int, ESM2-style AA token IDs
 tok["bb"]    # (L,) int, backbone codebook IDs   (vocab = 512)
@@ -117,24 +124,19 @@ itself is not loaded. CPU works fine and the GPU footprint stays small.
 
 ### 3. Score your encoder on the benchmark
 
-Plug your encoder into our probing benchmark in three steps. All the
-assets you need (splits, probing labels, Boltz tokens, and the raw PDBs
-under `REPSP_PDB/`) live in the
-[`k-fold-structure/repsp-benchmark`](https://huggingface.co/datasets/k-fold-structure/repsp-benchmark)
-HF dataset. The raw PDBs are AFDB structures redistributed under CC BY 4.0
-(see [Datasets](#datasets)).
-
 ```bash
-# (a) Pull the benchmark assets + the PDB shards you need.
-bash examples/setup_benchmark.sh
+# (a) Pull the small probing subset (splits + labels + ~2 GB of monomer PDBs).
+bash examples/setup_probing.sh
 
-# (b) Build features.lmdb with your encoder.
-#     See "Bring your own encoder" below for the on-disk schema.
-python my_extract.py --pdbs ./REPSP_PDB/monomer \
-                     --splits ./benchmark/splits/probing \
-                     --out ./work/features_theirs.lmdb
+# (b) Build features.lmdb with your encoder (schema: chain-A [L, D] fp16
+#     per <af-id>, keyed by lowercased AFid. See "Bring your own encoder"
+#     below for the exact contract).
+python my_extract.py \
+    --pdbs   ./REPSP_PDB/monomer \
+    --splits ./benchmark/splits/probing \
+    --out    ./work/features_theirs.lmdb
 
-# (c) Stage per-split tensors + probe the four homodimer tasks.
+# (c) Stage per-split .pt and run the four probing tasks.
 LABELS=./benchmark/probing/labels.pkl
 python code/repsp/probing/homomer/__lib/extract_probing_features.py \
     --features_lmdb ./work/features_theirs.lmdb \
@@ -150,43 +152,17 @@ for TASK in binding_site delta_sasa_mean levy_tier bond_type_plip; do
 done
 ```
 
-The schema (a) expects from your `my_extract.py` is in
-[Bring your own encoder](#bring-your-own-encoder).
-
 ### 4. Reproduce the benchmark
 
-Two commands. The first pulls all benchmark assets from HuggingFace
-(splits + probing labels + Boltz tokens + the monomer PDB shards). The
-second runs all four probing tasks with our encoder.
-
 ```bash
-bash examples/setup_benchmark.sh
-MODEL_SIZE=650M bash examples/run_benchmark.sh
+bash examples/setup_probing.sh     # about 2 GB
+bash examples/run_probing.sh       # extract features + 4 tasks with the 650M encoder
 ```
 
-Outputs land under `./work/results_650M/<task>.json`.
-
-`examples/setup_benchmark.sh` env vars:
-
-* `SPLIT=test | valid | train | all`: which monomer PDB shard(s) to fetch
-  and untar. Default `test` (~130 MB compressed for probing eval). Use
-  `all` for the full folding / co-folding training set.
-* `PDBS_DIR=./REPSP_PDB`: where to untar the PDBs.
-* `BENCHMARK=./benchmark`: where to place the splits + labels + Boltz tokens.
-
-Raw homodimer PDBs are **not** fetched by default: the shipped
-benchmarks (probing, folding, co-folding) all read the Boltz-tokenized
-dimer under `boltz_holo_{tokens,targets}` rather than raw dimer PDBs. If
-you need them for label recomputation or custom analysis, pull them
-directly with
-`hf download k-fold-structure/repsp-benchmark --repo-type dataset --include "REPSP_PDB/homodimer/*"`.
-
-`examples/run_benchmark.sh` env vars:
-
-* `MODEL_SIZE=35M | 150M | 650M | 3B`: pick encoder size.
-* `PDBS_DIR=./REPSP_PDB/monomer`: point at your monomer PDB dir.
-* `DEVICE=cuda:1 | cpu`: device placement.
-* Resumable. Re-running skips `.pt` shards already staged.
+Outputs land under `./work/results_650M/<task>.json` for the four tasks
+(`binding_site`, `delta_sasa_mean`, `levy_tier`, `bond_type_plip`).
+Set `MODEL_SIZE=35M | 150M | 650M | 3B` to pick a different encoder,
+e.g. `MODEL_SIZE=3B bash examples/run_probing.sh`.
 
 ## Models
 
@@ -316,7 +292,19 @@ loss pulls the trunk's mid-block hidden state toward the encoder's frozen
 features. Set up the folding env once with
 `bash code/repsp/folding/scripts/setup_env.sh`.
 
-Build `features.lmdb` first (see [Bring your own encoder](#bring-your-own-encoder)).
+```bash
+bash examples/setup_folding.sh                       # ~40 GB: monomer PDBs + Boltz apo
+```
+
+Build `features.lmdb` (per-encoder features consumed as the REPA target):
+
+```bash
+python examples/extract_features_from_pdbs.py \
+    --pdbs_dir ./REPSP_PDB/monomer --pdb_glob "*.pdb" \
+    --model 650M --output ./features.lmdb
+```
+
+Launch training:
 
 ```bash
 cd code/repsp/folding
@@ -324,7 +312,7 @@ cd code/repsp/folding
 APO_TOKENS=./benchmark/boltz_apo_tokens
 APO_TARGETS=./benchmark/boltz_apo_targets
 SPLIT=./benchmark/splits/folding
-FEATURES=./features/features.lmdb
+FEATURES=../../features.lmdb
 REPA_DIM=1280     # = features.lmdb __metadata__.output_dim
 REPA_W=2.0
 
@@ -351,7 +339,17 @@ trunk folds the holo dimer. The folding code under `code/repsp/folding/` is
 adapted from SimpleFold and [Boltz](https://github.com/jwohlwend/boltz)
 (both MIT, see `code/repsp/folding/LICENSE`).
 
-Build `features.lmdb` first (same step as folding above).
+```bash
+bash examples/setup_cofolding.sh                     # ~150 GB: monomer PDBs + Boltz holo
+```
+
+Build `features.lmdb` (per-encoder features consumed as the apo conditioning input):
+
+```bash
+python examples/extract_features_from_pdbs.py \
+    --pdbs_dir ./REPSP_PDB/monomer --pdb_glob "*.pdb" \
+    --model 650M --output ./features.lmdb
+```
 
 ```bash
 cd code/repsp/folding

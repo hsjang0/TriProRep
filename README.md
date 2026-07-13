@@ -413,8 +413,10 @@ matches your encoder's input:
   (`repsp-triprorep-tokens`, reassembled to `./tokens.lmdb`) through our
   released encoder with `inference.load_encoder` + `encode`.
 - **From raw PDBs and other model**: bring any non-ours encoder
-  (ESM-2, SaProt, MIF-ST, ...) that reads raw apo monomer PDBs (AlphaFold-v2
-  AFDB-Multimer monomers, see `UPLOAD_MANIFEST.md §4`). Replace the
+  (ESM-2, SaProt, MIF-ST, ...) that reads raw apo monomer PDBs. The AFDB
+  monomers are the same ones that ship as
+  `k-fold-structure/repsp-benchmark/REPSP_PDB/monomer/*.tar.gz`; untar and
+  point `PDB_DIR` at the resulting directory. Replace the
   `your_encoder_forward(...)` body.
 
 Both variants produce the same on-disk schema, so the workflow commands
@@ -463,7 +465,7 @@ from pathlib import Path
 import lmdb
 import numpy as np
 
-PDB_DIR    = Path("/path/to/afdb_monomer_apo_pdb")           # UPLOAD_MANIFEST §4 (external)
+PDB_DIR    = Path("./REPSP_PDB/monomer")                     # from repsp-benchmark
 SPLITS_DIR = Path("./benchmark/splits/folding")              # <split>.txt (monomer IDs)
 OUT_LMDB   = "./features/features.lmdb"
 ENCODER    = "your_encoder_v1"
@@ -558,7 +560,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-PDB_DIR    = Path("/path/to/afdb_monomer_apo_pdb")             # UPLOAD_MANIFEST §4 (external)
+PDB_DIR    = Path("./REPSP_PDB/monomer")                       # from repsp-benchmark
 SPLITS_DIR = Path("./benchmark/splits/probing")
 OUT_DIR    = Path("./probing_features"); OUT_DIR.mkdir(parents=True, exist_ok=True)
 

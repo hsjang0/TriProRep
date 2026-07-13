@@ -279,6 +279,10 @@ Both are produced locally in minutes from the structure tokens and an encoder
 
 ## Pre-training
 
+<p align="center">
+  <img src="_assets/method.png" alt="TriProRep pretraining overview" width="900">
+</p>
+
 Train the ELECTRA encoder on the provided tokenized LMDB.
 
 ```bash
@@ -290,7 +294,22 @@ torchrun --nproc_per_node=8 experiments/train_multinode.py \
 # Multi-node template: scripts/pretrain/650M.sh
 ```
 
-## Folding (REPA)
+## Benchmark
+
+<p align="center">
+  <img src="_assets/benchmark.png" alt="RepSP benchmark tasks" width="900">
+</p>
+
+Three complementary evaluations of the encoder representation on protein
+structure tasks: **folding** (REPA-supervised apo monomer prediction),
+**co-folding** (apo-conditioned homodimer prediction), and **probing**
+(frozen per-residue prediction of four homodimer-derived interaction
+properties). All three use the same shipped
+[`k-fold-structure/repsp-benchmark`](https://huggingface.co/datasets/k-fold-structure/repsp-benchmark)
+assets: `splits/`, `probing/labels.pkl`, `boltz_{apo,holo}_{tokens,targets}`,
+and `REPSP_PDB/`.
+
+### Folding (REPA)
 
 Apo single-chain folding with REPA supervision: a per-token cosine alignment
 loss pulls the trunk's mid-block hidden state toward the encoder's frozen
@@ -325,7 +344,7 @@ python src/simplefold/train.py experiment=folding_v1_full \
 For the no-REPA baseline, drop `data.feature_paths.repa_target_s` and set
 `model.repa_target_dim=0 model.repa_weight=0`.
 
-## Co-folding (homodimer)
+### Co-folding (homodimer)
 
 Apo conditioning of a [SimpleFold](https://github.com/apple/ml-simplefold)
 trunk folds the holo dimer. The folding code under `code/repsp/folding/` is
@@ -359,7 +378,7 @@ folding and co-folding. The AFid in each line resolves to two on-disk
 files: `REPSP_PDB/monomer/<AF-id>_monomer.pdb` for the apo side and
 `REPSP_PDB/homodimer/<AF-id>.pdb` for the dimer side.
 
-## Probing
+### Probing
 
 Frozen-representation, per-residue probing on four homodimer tasks:
 `binding_site`, `delta_sasa_mean`, `levy_tier`, `bond_type_plip`.
